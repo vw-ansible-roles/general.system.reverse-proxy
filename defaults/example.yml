@@ -1,0 +1,37 @@
+---
+reverse_http:
+  - server_name: www.myfirsturl.com
+    listen_port: 443
+    ssl: true
+    ssl_certificate: /etc/nginx/tls/myfirsturl.crt
+    ssl_certificate_key: /etc/nginx/tls/myfirsturl.key
+    read_timeout: 60
+    send_timeout: 60
+    backends:
+      protocol: https
+      servers:
+        - 192.168.1.1:5443
+        - 192.168.1.2:5443
+
+  - server_name: www.myotherurl.net
+    listen_port: 80
+    ssl: false
+    read_timeout: 300
+    send_timeout: 300
+    backends:
+      protocol: http
+      servers:
+        - 192.168.20.11:8080
+        - 192.168.20.12:8080
+
+reverse_tcp:
+  - listen_port: 12345
+    backends:
+      - 10.0.0.1:12345
+      - 10.0.0.2:12345
+
+reverse_udp:
+  - listen_port: 9000
+    backends:
+      - 10.0.0.3:9000
+      - 10.0.0.4:9000

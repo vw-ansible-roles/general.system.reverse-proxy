@@ -1,0 +1,38 @@
+{% for vhost in reverse_http %}
+server {
+    listen {{ vhost.listen_port }}{% if vhost.ssl %} ssl{% endif %};
+    server_name {{ vhost.server_name }};
+
+    {% if vhost.ssl %}
+    ssl_certificate {{ vhost.ssl_certificate }};
+    ssl_certificate_key {{ vhost.ssl_certificate_key }};
+    {% endif %}
+
+    location / {
+    
+        proxy_pass {{ vhost.backends.protocol }}://backend_{{ loop.index }};
+        proxy_set_header Host {{ vhost.server_name }};
+        
+        # WebSocket + SSE
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Keep client IP
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeouts
+        proxy_read_timeout {{ vhost.read_timeout }};
+        proxy_send_timeout {{ vhost.send_timeout }};
+        
+    }
+}
+
+upstream backend_{{ loop.index }} {
+    {% for server in vhost.backends.servers %}
+    server {{ server }};
+    {% endfor %}
+}
+{% endfor %}
