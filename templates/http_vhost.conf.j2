@@ -3,7 +3,7 @@ server {
     listen {{ vhost.listen_port }}{% if vhost.ssl %} ssl{% endif %};
     server_name {{ vhost.server_name }};
 
-    {% if vhost.ssl %}
+    {% if vhost.ssl -%}
     ssl_certificate {{ vhost.ssl_certificate }};
     ssl_certificate_key {{ vhost.ssl_certificate_key }};
     {% endif %}
@@ -27,11 +27,17 @@ server {
         proxy_read_timeout {{ vhost.read_timeout }};
         proxy_send_timeout {{ vhost.send_timeout }};
         
+        {% if vhost.auth_basic -%}
+        # Basic Auth
+        auth_basic "{{ vhost.auth_basic_prompt }}";
+        auth_basic_user_file {{ vhost.auth_basic_user_file }};
+        {% endif %}        
+        
     }
 }
 
 upstream backend_{{ loop.index }} {
-    {% for server in vhost.backends.servers %}
+    {% for server in vhost.backends.servers -%}
     server {{ server }};
     {% endfor %}
 }

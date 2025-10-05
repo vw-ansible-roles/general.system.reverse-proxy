@@ -5,6 +5,7 @@ reverse_http:
     ssl: true
     ssl_certificate: /etc/nginx/tls/myfirsturl.crt
     ssl_certificate_key: /etc/nginx/tls/myfirsturl.key
+    auth_basic: false
     read_timeout: 60
     send_timeout: 60
     backends:
@@ -16,6 +17,9 @@ reverse_http:
   - server_name: www.myotherurl.net
     listen_port: 80
     ssl: false
+    auth_basic: true
+    auth_basic_prompt: "Restricted Access"
+    auth_basic_user_file: "/etc/nginx/.htpasswd"
     read_timeout: 300
     send_timeout: 300
     backends:
