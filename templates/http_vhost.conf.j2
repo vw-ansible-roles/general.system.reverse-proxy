@@ -1,4 +1,14 @@
 {% for vhost in reverse_http %}
+{% if vhost.ssl_force_redirect -%}
+server {
+    listen 80;
+    server_name {{ vhost.server_name }};
+
+    # Redirection HTTP vers HTTPS
+    return 301 https://$host$request_uri;
+}
+{% endif %}
+
 server {
     listen {{ vhost.listen_port }}{% if vhost.ssl %} ssl{% endif %};
     server_name {{ vhost.server_name }};
@@ -32,6 +42,8 @@ server {
         auth_basic "{{ vhost.auth_basic_prompt }}";
         auth_basic_user_file {{ vhost.auth_basic_user_file }};
         {% endif %}        
+        # Client max body size
+        client_max_body_size {{ vhost.client_max_body_size }};
         
     }
 }
@@ -41,4 +53,5 @@ upstream backend_{{ loop.index }} {
     server {{ server }};
     {% endfor %}
 }
+
 {% endfor %}
