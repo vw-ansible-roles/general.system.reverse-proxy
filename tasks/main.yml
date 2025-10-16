@@ -19,8 +19,8 @@
     dest: /etc/nginx/conf.d/stream_tcp_udp.conf
   notify: Restart NGINX
 
-- name: Ensure NGINX is running
+- name: Enable/(re)start NGINX service
   service:
     name: nginx
-    state: started
+    state: restarted
     enabled: true
