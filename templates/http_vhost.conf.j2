@@ -36,12 +36,26 @@ server {
         # Timeouts
         proxy_read_timeout {{ vhost.read_timeout }};
         proxy_send_timeout {{ vhost.send_timeout }};
+
+{% if vhost.allow_hosts and vhost.auth_basic %}
+        # Satisfy any/all conditions
+        satisfy {{ vhost.satisfy_policy }};
         
-        {% if vhost.auth_basic -%}
+{% endif %}
+{% if vhost.allow_hosts %}
+        # Allow hosts
+{% for ip in vhost.allow_hosts %}
+        allow {{ ip }};
+{% endfor %}
+        deny all;
+        
+{% endif %}
+{% if vhost.auth_basic %}
         # Basic Auth
         auth_basic "{{ vhost.auth_basic_prompt }}";
         auth_basic_user_file {{ vhost.auth_basic_user_file }};
-        {% endif %}        
+        
+{% endif %}
         # Client max body size
         client_max_body_size {{ vhost.client_max_body_size }};
         
