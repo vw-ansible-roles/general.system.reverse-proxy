@@ -1,15 +1,14 @@
 {% for vhost in reverse_http %}
-{% if vhost.ssl_force_redirect -%}
+{% if vhost.ssl_force_redirect %}
 server {
     listen 80;
     server_name {{ vhost.server_name }};
-
-    # Redirection HTTP vers HTTPS
     return 301 https://$host$request_uri;
 }
 {% endif %}
 
 server {
+
     listen {{ vhost.listen_port }}{% if vhost.ssl %} ssl{% endif %};
     server_name {{ vhost.server_name }};
 
@@ -18,54 +17,63 @@ server {
     ssl_certificate_key {{ vhost.ssl_certificate_key }};
     {% endif %}
 
-    location / {
+    {% for location in vhost.locations -%}
+    location {{ location.path }} {
     
-        proxy_pass {{ vhost.backends.protocol }}://backend_{{ loop.index }};
-        proxy_set_header Host {{ vhost.server_name }};
-        
-        # WebSocket + SSE
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        
-        # Keep client IP
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+      {% set backend = (vhost.backends
+          | selectattr('name', 'equalto', location.backend)
+          | first) -%}
+      proxy_pass {{ backend.protocol }}://{{ backend.name }};
+      proxy_set_header Host {{ vhost.server_name }};
+      
+      # WebSocket + SSE
+      proxy_http_version 1.1;
+      
+      {% if location.upgrade -%}
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      {% endif -%}
+      
+      # Keep client IP
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeouts
-        proxy_read_timeout {{ vhost.read_timeout }};
-        proxy_send_timeout {{ vhost.send_timeout }};
-
-{% if vhost.allow_hosts and vhost.auth_basic %}
-        # Satisfy any/all conditions
-        satisfy {{ vhost.satisfy_policy }};
-        
-{% endif %}
-{% if vhost.allow_hosts %}
-        # Allow hosts
-{% for ip in vhost.allow_hosts %}
-        allow {{ ip }};
-{% endfor %}
-        deny all;
-        
-{% endif %}
-{% if vhost.auth_basic %}
-        # Basic Auth
-        auth_basic "{{ vhost.auth_basic_prompt }}";
-        auth_basic_user_file {{ vhost.auth_basic_user_file }};
-        
-{% endif %}
-        # Client max body size
-        client_max_body_size {{ vhost.client_max_body_size }};
-        
+      # Timeouts
+      proxy_read_timeout {{ location.read_timeout }};
+      proxy_send_timeout {{ location.send_timeout }};
+      
+      {% if location.allow_hosts and location.auth_basic -%}
+      # Satisfy any/all conditions
+      satisfy {{ location.satisfy_policy }};
+            
+      {% endif -%}
+      {% if location.allow_hosts -%}
+      # Allow hosts
+      {% for ip in location.allow_hosts -%}
+      allow {{ ip }};
+      {% endfor -%}
+      deny all;
+            
+      {% endif -%}
+      {% if location.auth_basic -%}
+      # Basic Auth
+      auth_basic "{{ location.auth_basic_prompt }}";
+      auth_basic_user_file {{ location.auth_basic_user_file }};
+      
+      {% endif -%}
+      
+      # Client max body size
+      client_max_body_size {{ location.client_max_body_size }};
+              
     }
+
+{% endfor %}
 }
 
-upstream backend_{{ loop.index }} {
-    {% for server in vhost.backends.servers -%}
-    server {{ server }};
-    {% endfor %}
+{% for backend in vhost.backends %}
+upstream {{ backend.name }} {
+    server {{ backend.address }};
 }
-
+{% endfor %}
 {% endfor %}
