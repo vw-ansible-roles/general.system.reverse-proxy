@@ -24,7 +24,7 @@ server {
           | selectattr('name', 'equalto', location.backend)
           | first) -%}
       proxy_pass {{ backend.protocol }}://{{ backend.name }};
-      proxy_set_header Host {{ vhost.server_name }};
+      proxy_set_header Host {{ vhost.host_header }};
       
       # WebSocket + SSE
       proxy_http_version 1.1;

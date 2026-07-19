@@ -1,6 +1,7 @@
 ---
 reverse_http:
   - server_name: "some-url.website.net"
+    host_header: "some-url.website.net"
     listen_port: 443
     ssl: true
     ssl_certificate: "/etc/ssl/certs/website-cert.pem"
@@ -40,6 +41,7 @@ reverse_http:
         address: 192.168.1.100:4237
 
   - server_name: www.myotherurl.net
+    host_header: www.myotherurl.net
     listen_port: 80
     ssl: false
     ssl_force_redirect: false
@@ -60,6 +62,7 @@ reverse_http:
         address: 10.50.9.167:80
 
   - server_name: www.yetanotherurl.net
+    host_header: localhost
     listen_port: 443
     ssl: true
     ssl_certificate: /etc/nginx/tls/myotherurl.crt
@@ -82,7 +85,7 @@ reverse_http:
     backends:
       - name: yetanothersite_backend
         protocol: http
-        address: 1.2.3.4:80
+        address: 127.0.0.1:80
 
 reverse_tcp:
   - listen_port: 12345
